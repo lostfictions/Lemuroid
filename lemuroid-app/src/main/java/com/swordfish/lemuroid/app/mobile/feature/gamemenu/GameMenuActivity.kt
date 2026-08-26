@@ -77,6 +77,8 @@ class GameMenuActivity : RetrogradeComponentActivity() {
         val fastForwardEnabled: Boolean,
         val numDisks: Int,
         val currentDisk: Int,
+        val controllerConnected: Boolean,
+        val displayPositionTop: Boolean,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -112,6 +114,10 @@ class GameMenuActivity : RetrogradeComponentActivity() {
                     extras?.getInt(GameMenuContract.EXTRA_DISKS, 0) ?: 0,
                 currentDisk =
                     extras?.getInt(GameMenuContract.EXTRA_CURRENT_DISK, 0) ?: 0,
+                controllerConnected =
+                    extras?.getBoolean(GameMenuContract.EXTRA_CONTROLLER_CONNECTED, false) ?: false,
+                displayPositionTop =
+                    extras?.getBoolean(GameMenuContract.EXTRA_DISPLAY_POSITION_TOP, false) ?: false,
             )
 
         setContent {

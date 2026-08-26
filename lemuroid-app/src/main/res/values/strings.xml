@@ -111,6 +111,7 @@
     <string name="game_menu_edit_touch_controls">Edit Controls</string>
     <string name="game_menu_mute_audio">Mute</string>
     <string name="game_menu_fast_forward">Fast-Forward</string>
+    <string name="game_menu_display_position_top">Move Display to Top</string>
     <string name="game_menu_change_disk_disk">Disk %1$s</string>
 
     <string name="game_loading_preparing_game">Preparing game…</string>

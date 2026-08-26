@@ -125,18 +125,34 @@ fun GameMenuHomeScreen(
             )
         }
 
-        LemuroidSettingsMenuLink(
-            title = { Text(text = stringResource(id = R.string.game_menu_edit_touch_controls)) },
-            icon = {
-                Icon(
-                    painterResource(R.drawable.ic_menu_controls),
-                    contentDescription = stringResource(id = R.string.game_menu_edit_touch_controls),
-                )
-            },
-            onClick = {
-                onResult { putExtra(GameMenuContract.RESULT_EDIT_TOUCH_CONTROLS, true) }
-            },
-        )
+        if (gameMenuRequest.controllerConnected) {
+            LemuroidSettingsSwitch(
+                title = { Text(text = stringResource(id = R.string.game_menu_display_position_top)) },
+                icon = {
+                    Icon(
+                        painterResource(R.drawable.ic_menu_controls),
+                        contentDescription = stringResource(id = R.string.game_menu_display_position_top),
+                    )
+                },
+                state = rememberMemoryBooleanSettingState(gameMenuRequest.displayPositionTop),
+                onCheckedChange = {
+                    onResult { putExtra(GameMenuContract.RESULT_DISPLAY_POSITION_TOP, it) }
+                },
+            )
+        } else {
+            LemuroidSettingsMenuLink(
+                title = { Text(text = stringResource(id = R.string.game_menu_edit_touch_controls)) },
+                icon = {
+                    Icon(
+                        painterResource(R.drawable.ic_menu_controls),
+                        contentDescription = stringResource(id = R.string.game_menu_edit_touch_controls),
+                    )
+                },
+                onClick = {
+                    onResult { putExtra(GameMenuContract.RESULT_EDIT_TOUCH_CONTROLS, true) }
+                },
+            )
+        }
 
         if (gameMenuRequest.advancedCoreOptions.isNotEmpty() || gameMenuRequest.coreOptions.isNotEmpty()) {
             LemuroidSettingsMenuLink(

@@ -480,10 +480,16 @@ abstract class BaseGameActivity : ImmersiveActivity() {
                 this.putExtra(GameMenuContract.EXTRA_AUDIO_ENABLED, retroGameView?.audioEnabled)
                 this.putExtra(GameMenuContract.EXTRA_FAST_FORWARD_SUPPORTED, system.fastForwardSupport)
                 this.putExtra(GameMenuContract.EXTRA_FAST_FORWARD, (retroGameView?.frameSpeed ?: 1) > 1)
+                this.putExtra(GameMenuContract.EXTRA_CONTROLLER_CONNECTED, isControllerConnectedForMenu)
+                this.putExtra(GameMenuContract.EXTRA_DISPLAY_POSITION_TOP, isDisplayPositionTopForMenu)
             }
         startActivityForResult(intent, DIALOG_REQUEST)
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
     }
+
+    protected open val isControllerConnectedForMenu: Boolean get() = false
+
+    protected open val isDisplayPositionTopForMenu: Boolean get() = false
 
     protected abstract fun getDialogClass(): Class<out Activity>
 

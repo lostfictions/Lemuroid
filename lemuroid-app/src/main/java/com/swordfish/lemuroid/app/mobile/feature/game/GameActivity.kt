@@ -45,7 +45,7 @@ import com.swordfish.lemuroid.common.coroutines.launchOnState
 import com.swordfish.lemuroid.common.coroutines.safeCollect
 import com.swordfish.lemuroid.common.graphics.GraphicsUtils
 import com.swordfish.lemuroid.common.kotlin.NTuple2
-import com.swordfish.lemuroid.common.kotlin.NTuple3
+import com.swordfish.lemuroid.common.kotlin.NTuple4
 import com.swordfish.lemuroid.common.kotlin.allTrue
 import com.swordfish.lemuroid.common.math.linearInterpolation
 import com.swordfish.lemuroid.lib.controller.ControllerConfig
@@ -105,11 +105,17 @@ class GameActivity : BaseGameActivity() {
     private val touchControllerSettingsState = MutableStateFlow<TouchControllerSettingsManager.Settings?>(null)
     private val insetsState = MutableStateFlow<Rect?>(null)
     private val orientationState = MutableStateFlow(Configuration.ORIENTATION_PORTRAIT)
+    private val displayPositionTopState = MutableStateFlow(false)
+
+    private var isControllerConnected = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         orientationState.value = getCurrentOrientation()
+
+        displayPositionTopState.value =
+            sharedPreferences.get().getBoolean(PREF_KEY_DISPLAY_POSITION_TOP, false)
 
         tiltSensor = TiltSensor(applicationContext)
 
@@ -147,6 +153,7 @@ class GameActivity : BaseGameActivity() {
             .safeCollect {
                 leftGamePadContainer.isVisible = it
                 rightGamePadContainer.isVisible = it
+                isControllerConnected = !it
             }
     }
 
@@ -188,12 +195,20 @@ class GameActivity : BaseGameActivity() {
                 isTouchControllerVisible(),
                 touchControllerSettingsState.filterNotNull(),
                 insetsState.filterNotNull(),
-                ::NTuple3,
+                displayPositionTopState,
+                ::NTuple4,
             )
 
         touchControllerFeatures.combine(layoutFeatures) { e1, e2 -> e1 + e2 }
-            .safeCollect { (config, orientation, touchControllerVisible, padSettings, insets) ->
-                LayoutHandler().updateLayout(config, padSettings, orientation, touchControllerVisible, insets)
+            .safeCollect { (config, orientation, touchControllerVisible, padSettings, insets, displayPositionTop) ->
+                LayoutHandler().updateLayout(
+                    config,
+                    padSettings,
+                    orientation,
+                    touchControllerVisible,
+                    insets,
+                    displayPositionTop,
+                )
             }
     }
 
@@ -488,8 +503,25 @@ class GameActivity : BaseGameActivity() {
                     displayCustomizationOptions()
                 }
             }
+
+            if (data?.hasExtra(GameMenuContract.RESULT_DISPLAY_POSITION_TOP) == true) {
+                val displayPositionTop =
+                    data.getBooleanExtra(GameMenuContract.RESULT_DISPLAY_POSITION_TOP, false)
+                setDisplayPositionTop(displayPositionTop)
+            }
         }
     }
+
+    private fun setDisplayPositionTop(displayPositionTop: Boolean) {
+        displayPositionTopState.value = displayPositionTop
+        sharedPreferences.get().edit()
+            .putBoolean(PREF_KEY_DISPLAY_POSITION_TOP, displayPositionTop)
+            .apply()
+    }
+
+    override val isControllerConnectedForMenu: Boolean get() = isControllerConnected
+
+    override val isDisplayPositionTopForMenu: Boolean get() = displayPositionTopState.value
 
     override fun onPause() {
         super.onPause()
@@ -627,6 +659,7 @@ class GameActivity : BaseGameActivity() {
             orientation: Int,
             touchControllerVisible: Boolean,
             insets: Rect,
+            displayPositionTop: Boolean,
         ) {
             if (!touchControllerVisible) {
                 constraintSet.connect(
@@ -653,6 +686,15 @@ class GameActivity : BaseGameActivity() {
                     ConstraintSet.PARENT_ID,
                     ConstraintSet.RIGHT,
                 )
+
+                if (displayPositionTop) {
+                    constraintSet.constrainPercentHeight(R.id.gamecontainer, DISPLAY_TOP_HEIGHT_PERCENT)
+                    constraintSet.setVerticalBias(R.id.gamecontainer, 0f)
+                    constraintSet.setMargin(R.id.gamecontainer, ConstraintSet.TOP, insets.top)
+                } else {
+                    constraintSet.constrainPercentHeight(R.id.gamecontainer, 1f)
+                    constraintSet.setVerticalBias(R.id.gamecontainer, 0.5f)
+                }
                 return
             }
 
@@ -951,6 +993,7 @@ class GameActivity : BaseGameActivity() {
             orientation: Int,
             touchControllerVisible: Boolean,
             insets: Rect,
+            displayPositionTop: Boolean,
         ) {
             updateDividers(orientation, config, touchControllerVisible)
 
@@ -958,7 +1001,14 @@ class GameActivity : BaseGameActivity() {
             constraintSet.clone(mainContainerLayout)
 
             handleTouchControllerLayout(constraintSet, padSettings, config, orientation, insets)
-            handleRetroViewLayout(constraintSet, config, orientation, touchControllerVisible, insets)
+            handleRetroViewLayout(
+                constraintSet,
+                config,
+                orientation,
+                touchControllerVisible,
+                insets,
+                displayPositionTop,
+            )
 
             constraintSet.applyTo(mainContainerLayout)
 
@@ -970,5 +1020,7 @@ class GameActivity : BaseGameActivity() {
     companion object {
         const val DEFAULT_MARGINS_DP = 8f
         const val DEFAULT_PRIMARY_DIAL_SIZE = 160f
+        const val DISPLAY_TOP_HEIGHT_PERCENT = 0.65f
+        const val PREF_KEY_DISPLAY_POSITION_TOP = "pref_key_game_display_position_top"
     }
 }
